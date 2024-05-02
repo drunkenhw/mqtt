@@ -1,11 +1,11 @@
 package com.example.mqtt
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.iot.client.AWSIotMqttClient
 import com.amazonaws.services.iot.client.auth.Credentials
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.iot.IotClient
 import software.amazon.awssdk.services.iot.endpoints.internal.DefaultIotEndpointProvider
@@ -23,12 +23,12 @@ class MqttConfig {
     @Bean
     fun awsIotMqttClient(): AWSIotMqttClient {
         val region = "ap-northeast-2"
-        val resolveCredentials = DefaultCredentialsProvider.create().resolveCredentials()
+        val awsCredentials = DefaultAWSCredentialsProviderChain.getInstance().credentials
 
         val awsIotMqttClient = AWSIotMqttClient(
             endPoint,
             clientId,
-            { Credentials(resolveCredentials.accessKeyId(), resolveCredentials.secretAccessKey()) },
+            { Credentials(awsCredentials.awsAccessKeyId, awsCredentials.awsSecretKey) },
             region,
         )
         awsIotMqttClient.connect()
@@ -39,6 +39,7 @@ class MqttConfig {
     fun iotClient(): IotClient {
         val iotClient = IotClient.builder()
             .region(Region.AP_NORTHEAST_2)
+
             .endpointProvider(DefaultIotEndpointProvider())
             .build()
         return iotClient
