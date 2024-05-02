@@ -3,6 +3,8 @@ package com.example.mqtt
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.iot.client.AWSIotMqttClient
 import com.amazonaws.services.iot.client.auth.Credentials
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -25,6 +27,7 @@ class MqttConfig {
         val region = "ap-northeast-2"
         val awsCredentials = DefaultAWSCredentialsProviderChain.getInstance().credentials
 
+        log.info("awsCredentials: ${awsCredentials.awsAccessKeyId}, ${awsCredentials.awsSecretKey}")
         val awsIotMqttClient = AWSIotMqttClient(
             endPoint,
             clientId,
@@ -43,5 +46,9 @@ class MqttConfig {
             .endpointProvider(DefaultIotEndpointProvider())
             .build()
         return iotClient
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(MqttConfig::class.java)
     }
 }
