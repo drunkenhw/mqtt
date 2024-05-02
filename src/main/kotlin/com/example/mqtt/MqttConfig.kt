@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.iot.IotClient
 import software.amazon.awssdk.services.iot.endpoints.internal.DefaultIotEndpointProvider
@@ -42,7 +43,7 @@ class MqttConfig {
     fun iotClient(): IotClient {
         val iotClient = IotClient.builder()
             .region(Region.AP_NORTHEAST_2)
-
+            .credentialsProvider(ContainerCredentialsProvider.builder().build())
             .endpointProvider(DefaultIotEndpointProvider())
             .build()
         return iotClient
