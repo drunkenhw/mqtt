@@ -25,6 +25,7 @@ class MqttConfig {
     fun mqtt5Client(iotClient: IotClient): Mqtt5Client {
         val key = iotClient.createKeysAndCertificate(CreateKeysAndCertificateRequest.builder().setAsActive(true).build())
         log.info("Key created $key")
+        log.info("private key : ${key.keyPair().privateKey()}")
         val client = AwsIotMqtt5ClientBuilder.newDirectMqttBuilderWithMtlsFromMemory(
             endPoint, key.certificatePem(), key.keyPair().privateKey()
         ).build()
