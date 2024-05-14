@@ -26,12 +26,16 @@ class MqttConfig {
         val key = iotClient.createKeysAndCertificate(CreateKeysAndCertificateRequest.builder().setAsActive(true).build())
         log.info("Key created $key")
         val client = AwsIotMqtt5ClientBuilder.newDirectMqttBuilderWithMtlsFromMemory(
-
             endPoint, key.certificatePem(), key.keyPair().privateKey()
         ).build()
         log.info("MQTT client created")
         log.info("client : $client")
+
+        val connected1 = client.isConnected
+        log.info("Before start = Connected : $connected1")
         client.start()
+        val connected = client.isConnected
+        log.info("After start = Connected : $connected")
         return client
     }
 
