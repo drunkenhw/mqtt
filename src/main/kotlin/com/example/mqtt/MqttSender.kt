@@ -5,30 +5,29 @@ import com.amazonaws.services.iot.client.AWSIotMqttClient
 import com.amazonaws.services.iot.client.AWSIotQos
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
+import software.amazon.awssdk.crt.mqtt5.Mqtt5Client
+import software.amazon.awssdk.crt.mqtt5.packets.PublishPacket
+import software.amazon.awssdk.crt.mqtt5.packets.PublishPacket.PublishPacketBuilder
 
 @Service
 class MqttSender(
-    private val awsIotMqttClient: AWSIotMqttClient,
+    private val mqtt5Client: Mqtt5Client,
     private val objectMapper: ObjectMapper
 ) {
 
     fun send() {
-        awsIotMqttClient.publish("/topic", "message", 3000)
+        val message = publishPacket("/topic","rch")
+        mqtt5Client.publish(message)
+    }
+
+    private fun publishPacket(topic: String, message: String): PublishPacket {
+        return PublishPacketBuilder().withTopic(topic)
+            .withPayload(message.toByteArray())
+            .build()
     }
 
     fun sendAwsIotMessage(content: Map<String, String>) {
         val json = objectMapper.writeValueAsString(content)
-        val message = Message("/hello", json)
-        awsIotMqttClient.publish(message, 3000)
-    }
-}
-
-class Message(topic: String, payload: String) : AWSIotMessage(topic, AWSIotQos.QOS0, payload) {
-    override fun onFailure() {
-        println("fail")
-    }
-
-    override fun onSuccess() {
-        println("success")
+        mqtt5Client.publish(publishPacket("hello", json))
     }
 }
