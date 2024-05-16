@@ -1,15 +1,17 @@
 package com.example.mqtt
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
+import com.amazonaws.services.iot.client.AWSIotMqttClient
+import com.amazonaws.services.iot.client.auth.Credentials
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import software.amazon.awssdk.crt.mqtt5.Mqtt5Client
-import software.amazon.awssdk.iot.AwsIotMqtt5ClientBuilder
+import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.iot.IotClient
 import software.amazon.awssdk.services.iot.endpoints.internal.DefaultIotEndpointProvider
-import software.amazon.awssdk.services.iot.model.CreateKeysAndCertificateRequest
 
 
 @Configuration
@@ -22,22 +24,19 @@ class MqttConfig {
     private lateinit var endPoint: String
 
     @Bean
-    fun mqtt5Client(iotClient: IotClient): Mqtt5Client {
-        val key = iotClient.createKeysAndCertificate(CreateKeysAndCertificateRequest.builder().setAsActive(true).build())
-        log.info("Key created $key")
-        log.info("private key : ${key.keyPair().privateKey()}")
-        val client = AwsIotMqtt5ClientBuilder.newDirectMqttBuilderWithMtlsFromMemory(
-            endPoint, key.certificatePem(), key.keyPair().privateKey()
-        ).build()
-        log.info("MQTT client created")
-        log.info("client : $client")
+    fun awsIotMqttClient(): AWSIotMqttClient {
+        val region = "ap-northeast-2"
+        val awsCredentials = DefaultAWSCredentialsProviderChain.getInstance().credentials
 
-        val connected1 = client.isConnected
-        log.info("Before start = Connected : $connected1")
-        client.start()
-        val connected = client.isConnected
-        log.info("After start = Connected : $connected")
-        return client
+        log.info("awsCredentials: ${awsCredentials.awsAccessKeyId}, ${awsCredentials.awsSecretKey}")
+        val awsIotMqttClient = AWSIotMqttClient(
+            endPoint,
+            clientId,
+            { Credentials(awsCredentials.awsAccessKeyId, awsCredentials.awsSecretKey) },
+            region,
+        )
+        awsIotMqttClient.connect()
+        return awsIotMqttClient
     }
 
     @Bean
@@ -46,7 +45,6 @@ class MqttConfig {
             .region(Region.AP_NORTHEAST_2)
             .endpointProvider(DefaultIotEndpointProvider())
             .build()
-        log.info("Iot client created")
         return iotClient
     }
 
