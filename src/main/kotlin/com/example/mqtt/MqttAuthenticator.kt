@@ -8,6 +8,8 @@ import software.amazon.awssdk.services.iot.model.AttachThingPrincipalRequest
 import software.amazon.awssdk.services.iot.model.CreateKeysAndCertificateRequest
 import software.amazon.awssdk.services.iot.model.CreateKeysAndCertificateResponse
 import software.amazon.awssdk.services.iot.model.CreateThingRequest
+import software.amazon.awssdk.services.iot.model.DeleteCertificateRequest
+import software.amazon.awssdk.services.iot.model.ListAuthorizersRequest
 
 @Service
 class MqttAuthenticator(
@@ -18,30 +20,33 @@ class MqttAuthenticator(
         iotClient.createKeysAndCertificate { it.setAsActive(true) }
 
     fun jitp(deviceId: String): Map<String, String> {
-        val keyAndCert = iotClient.createKeysAndCertificate(
-            CreateKeysAndCertificateRequest.builder().setAsActive(true).build()
-        )
+        val keyAndCert = iotClient.createKeysAndCertificate {
+            it.setAsActive(true)
+        }
 
         val certificateArn = keyAndCert.certificateArn()
         val certificatePem = keyAndCert.certificatePem()
         val privateKey = keyAndCert.keyPair().privateKey()
 
         // 사물 생성
-        iotClient.createThing(CreateThingRequest.builder().thingName(deviceId).build())
+        iotClient.createThing { it.thingName(deviceId) }
+
+        // 사물 그룹 연결
+        iotClient.addThingToThingGroup {
+            it.thingName(deviceId).thingGroupName("boxster-group")
+        }
 
         // 정책 연결
         val policyName = "boxster-jitp"
-        iotClient.attachPolicy(
-            AttachPolicyRequest.builder().policyName(policyName).target(certificateArn).build()
-        )
+        iotClient.attachPolicy {
+            it.policyName(policyName).target(certificateArn)
+        }
 
         // 사물에 인증서 연결
-        iotClient.attachThingPrincipal(
-            AttachThingPrincipalRequest.builder().thingName(deviceId).principal(certificateArn).build()
-        )
-        iotClient.addThingToThingGroup(
-            AddThingToThingGroupRequest.builder().thingGroupName("boxster-group").thingName(deviceId).build()
-        )
+        iotClient.attachThingPrincipal {
+            it.thingName(deviceId).principal(certificateArn)
+        }
+
 
         return mapOf("certPem" to certificatePem, "privateKey" to privateKey)
     }
